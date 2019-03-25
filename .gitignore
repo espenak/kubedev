@@ -1,3 +1,3 @@
 .idea/
-_kubedev_template_cache/
 /kubedev
+_kubedev_built_templates/
