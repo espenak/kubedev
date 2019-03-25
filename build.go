@@ -12,10 +12,11 @@ func Build (args []string) {
   cliFlags.BoolVar(&verbose, "verbose", false, "Verbose mode")
   cliFlags.Usage = func() { printUsage(cliFlags) }
 
-  contextRootDirectory := args[0]
-  if contextRootDirectory == "" {
+  if len(args) < 1 {
     printUsage(cliFlags)
+    os.Exit(1)
   }
+  contextRootDirectory := args[0]
 
   if err := cliFlags.Parse(args[1:]); err != nil {
 		cliFlags.Usage()
@@ -23,9 +24,13 @@ func Build (args []string) {
 	}
 
   // fmt.Printf("build! %t\n", verbose)
-  context := NewContext("examples/simpledemo/", verbose)
-  err := context.BuildTemplates()
+  context, err := NewContext(contextRootDirectory, verbose)
   if (err != nil) {
+    fmt.Fprintln(os.Stderr, err)
+    os.Exit(1)
+  }
+
+  if context.BuildTemplates() != nil {
     fmt.Fprintln(os.Stderr, err)
     os.Exit(1)
   }

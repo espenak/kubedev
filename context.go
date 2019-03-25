@@ -12,13 +12,18 @@ type Context struct {
   Verbose bool
 }
 
-func NewContext (rootDirectory string, verbose bool) *Context {
+func NewContext (rootDirectory string, verbose bool) (*Context, error) {
+  if _, err := os.Stat(rootDirectory); os.IsNotExist(err) {
+    return nil, err
+  }
+
   context := Context{
     RootDirectory: rootDirectory,
     Verbose: verbose,
   }
+
   context.LoadConfig()
-  return &context
+  return &context, nil
 }
 
 func (context *Context) LoadConfig() {
