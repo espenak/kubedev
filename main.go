@@ -6,6 +6,10 @@ import (
 )
 
 func main() {
+  if len(os.Args) < 2 {
+    fmt.Println(helpText)
+    os.Exit(1)
+  }
   var subcommand = os.Args[1]
   switch subcommand {
   case "build":
@@ -14,7 +18,7 @@ func main() {
   	// sendCommand.Parse(os.Args[2:])
   default:
   	fmt.Println(helpText)
-  	os.Exit(2)
+  	os.Exit(1)
   }
   // fmt.Printf("Hello world!! %v %t\n", subcommand, verbose)
 }
