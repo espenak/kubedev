@@ -1,9 +1,9 @@
 apiVersion: v1
 kind: Pod
 metadata:
-  name: {{.Name}}-pod
+  name: {{.FullName}}-pod
   labels:
-    app: {{.Name}}
+    app: {{.FullName}}
 spec:
   volumes:
   - name: shared-data
@@ -11,8 +11,8 @@ spec:
       path: /Users/espenak/code/kubewrr/shared_data
   terminationGracePeriodSeconds: 4
   containers:
-  - name: {{.Name}}-miniserver
-    image: {{.Name}}-miniserver
+  - name: {{.FullName}}-miniserver
+    image: {{.FullName}}-miniserver
     imagePullPolicy: Never
     ports:
     - containerPort: 8000
@@ -23,9 +23,9 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{.Name}}--miniserver-service
+  name: {{.FullName}}--miniserver-service
   labels:
-    app: {{.Name}}
+    app: {{.FullName}}
 spec:
   externalTrafficPolicy: Cluster
   ports:
@@ -33,5 +33,5 @@ spec:
     protocol: TCP
     targetPort: 8000
   selector:
-    app: {{.Name}}-miniserver
+    app: {{.FullName}}-miniserver
   type: LoadBalancer

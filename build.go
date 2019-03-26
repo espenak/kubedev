@@ -37,7 +37,7 @@ func Build(args []string) {
 
 	if verbose {
 		fmt.Println("** Config: **")
-		context.Config.YamlPrint()
+		context.YamlPrint()
 		fmt.Println("")
 	}
 }

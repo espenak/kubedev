@@ -2,22 +2,25 @@ package main
 
 import (
 	"fmt"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"text/template"
+
+	"gopkg.in/yaml.v2"
 )
 
 type TemplateVariables struct {
-	ContextDirectory string
-	Name             string
+	RootDirectory string
+	FullName      string
 }
 
 type Context struct {
-	RootDirectory    string
-	AbsRootDirectory string
-	Verbose          bool
-	Name             string
-	Config           *Config
+	RootDirectory string `yaml:"rootDirectory"`
+	ApiVersion    string `yaml:"apiVersion"`
+	Name          string `yaml:"name"`
+	DockerContext string `yaml:"dockerContext"`
+	Verbose       bool   `yaml:"verbose"`
 }
 
 func NewContext(rootDirectory string, verbose bool) (*Context, error) {
@@ -30,30 +33,68 @@ func NewContext(rootDirectory string, verbose bool) (*Context, error) {
 		return nil, err2
 	}
 
-	context := Context{
-		RootDirectory:    rootDirectory,
-		AbsRootDirectory: absRootDirectory,
-		Verbose:          verbose,
-		Name:             "tullball",
-	}
-
-	var err3 error
-	context.Config, err3 = LoadConfigFromFile(context.ConfigPath())
+	context := Context{}
+	err3 := context.loadConfigFile(absRootDirectory)
 	if err3 != nil {
 		return nil, err3
 	}
+	context.RootDirectory = absRootDirectory
+	context.Verbose = verbose
+
+	validationError := context.clean()
+	if validationError != nil {
+		return nil, validationError
+	}
 
 	return &context, nil
+}
+
+func (context *Context) loadConfigFile(absRootDirectory string) error {
+	configFilePath := filepath.Join(absRootDirectory, "kubedev.yml")
+	content, err := ioutil.ReadFile(configFilePath)
+	if err != nil {
+		return err
+	}
+
+	err2 := yaml.Unmarshal(content, &context)
+	if err2 != nil {
+		return err2
+	}
+
+	return nil
+}
+
+func (context *Context) clean() error {
+	validationError := func(message string) error {
+		return fmt.Errorf("%s: %s", context.ConfigPath(), message)
+	}
+	if context.Name == "" {
+		return validationError("name is required.")
+	}
+	if context.ApiVersion == "" {
+		return validationError("apiVersion must be 'v1'.")
+	}
+	if context.DockerContext == "" {
+		context.DockerContext = context.RootDirectory
+	} else {
+		dockerContext, err := filepath.Abs(filepath.Join(context.RootDirectory, context.DockerContext))
+		if err != nil {
+			return err
+		}
+		context.DockerContext = dockerContext
+	}
+
+	return nil
 }
 
 func (context Context) ConfigPath() string {
 	return filepath.Join(context.RootDirectory, "kubedev.yml")
 }
 
-func (context Context) DockerContext() string {
-	path, _ := filepath.Abs(filepath.Join(context.RootDirectory, context.Config.DockerContext))
-	return path
-}
+// func (context Context) AbsDockerContext() string {
+// 	path, _ := filepath.Abs(filepath.Join(context.RootDirectory, context.DockerContext))
+// 	return path
+// }
 
 func (context Context) TemplatesDirectory() string {
 	return filepath.Join(context.RootDirectory, "templates")
@@ -74,8 +115,8 @@ func (context Context) FullName() string {
 
 func (context Context) TemplateVariables() *TemplateVariables {
 	return &TemplateVariables{
-		ContextDirectory: context.AbsRootDirectory,
-		Name:             context.FullName(),
+		RootDirectory: context.RootDirectory,
+		FullName:      context.FullName(),
 	}
 }
 
@@ -104,4 +145,21 @@ func (context Context) BuildTemplates() error {
 		}
 	}
 	return nil
+}
+
+func (context Context) YamlFormat() (string, error) {
+	output, err := yaml.Marshal(context)
+	if err != nil {
+		return "", err
+	}
+	return string(output), nil
+}
+
+func (context Context) YamlPrint() {
+	output, err := context.YamlFormat()
+	if err == nil {
+		fmt.Println(output)
+	} else {
+		fmt.Fprintln(os.Stderr, err)
+	}
 }

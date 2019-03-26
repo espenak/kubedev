@@ -1,8 +1,17 @@
+# Required, and must always be v1 for now
 apiVersion: v1
+
+# Required
 name: demo
+
+# Optional - defaults to same directory as this file
 dockerContext: ../../
 
 # Paths are special - they are made absolute, and ~ is expanded before
 # they are sent to the templates
 paths:
   hosthome: ~/
+
+# Vars are parsed as strings and is made available to the templates
+vars:
+  testVar: Hello World
