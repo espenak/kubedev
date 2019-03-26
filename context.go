@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"text/template"
 
+	"github.com/atrox/homedir"
 	"gopkg.in/yaml.v2"
 )
 
@@ -16,11 +17,13 @@ type TemplateVariables struct {
 }
 
 type Context struct {
-	RootDirectory string `yaml:"rootDirectory"`
-	ApiVersion    string `yaml:"apiVersion"`
-	Name          string `yaml:"name"`
-	DockerContext string `yaml:"dockerContext"`
-	Verbose       bool   `yaml:"verbose"`
+	RootDirectory string            `yaml:"rootDirectory"`
+	ApiVersion    string            `yaml:"apiVersion"`
+	Name          string            `yaml:"name"`
+	DockerContext string            `yaml:"dockerContext"`
+	Verbose       bool              `yaml:"verbose"`
+	Paths         map[string]string `yaml:"paths"`
+	Vars          map[string]string `yaml:"vars"`
 }
 
 func NewContext(rootDirectory string, verbose bool) (*Context, error) {
@@ -74,6 +77,7 @@ func (context *Context) clean() error {
 	if context.ApiVersion == "" {
 		return validationError("apiVersion must be 'v1'.")
 	}
+
 	if context.DockerContext == "" {
 		context.DockerContext = context.RootDirectory
 	} else {
@@ -84,17 +88,37 @@ func (context *Context) clean() error {
 		context.DockerContext = dockerContext
 	}
 
+	if context.Paths == nil {
+		context.Paths = make(map[string]string)
+	} else {
+		for pathKey, rawPath := range context.Paths {
+			cleanedPath, err := homedir.Expand(rawPath)
+			if err != nil {
+				return err
+			}
+			if !filepath.IsAbs(cleanedPath) {
+				cleanedPath, err = filepath.Abs(filepath.Join(context.RootDirectory, cleanedPath))
+				if err != nil {
+					return err
+				}
+			}
+			context.Paths[pathKey] = cleanedPath
+		}
+	}
+
+	if context.Vars == nil {
+		context.Vars = make(map[string]string)
+	}
+	// for k, v := range m {
+	//   fmt.Println("k:", k, "v:", v)
+	// }
+
 	return nil
 }
 
 func (context Context) ConfigPath() string {
 	return filepath.Join(context.RootDirectory, "kubedev.yml")
 }
-
-// func (context Context) AbsDockerContext() string {
-// 	path, _ := filepath.Abs(filepath.Join(context.RootDirectory, context.DockerContext))
-// 	return path
-// }
 
 func (context Context) TemplatesDirectory() string {
 	return filepath.Join(context.RootDirectory, "templates")

@@ -11,6 +11,7 @@ dockerContext: ../../
 # they are sent to the templates
 paths:
   hosthome: ~/
+  parent: ../
 
 # Vars are parsed as strings and is made available to the templates
 vars:
