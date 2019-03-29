@@ -12,6 +12,7 @@ dockerContext: ../../
 paths:
   hosthome: ~/
   parent: ../
+  shared_files: shared_files
 
 # Vars are parsed as strings and is made available to the templates
 vars:

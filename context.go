@@ -11,11 +11,6 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-type TemplateVariables struct {
-	RootDirectory string
-	FullName      string
-}
-
 type Context struct {
 	RootDirectory string            `yaml:"rootDirectory"`
 	ApiVersion    string            `yaml:"apiVersion"`
@@ -138,10 +133,7 @@ func (context Context) FullName() string {
 }
 
 func (context Context) TemplateVariables() *TemplateVariables {
-	return &TemplateVariables{
-		RootDirectory: context.RootDirectory,
-		FullName:      context.FullName(),
-	}
+	return &TemplateVariables{context}
 }
 
 func (context Context) BuildTemplate(parsedTemplates *template.Template, templateName string) error {
@@ -151,9 +143,12 @@ func (context Context) BuildTemplate(parsedTemplates *template.Template, templat
 		return err
 	}
 	defer outFile.Close()
-	parsedTemplates.ExecuteTemplate(outFile, templateName, context.TemplateVariables())
+	compileError := parsedTemplates.ExecuteTemplate(outFile, templateName, context.TemplateVariables())
+	if compileError != nil {
+		return err
+	}
 	outFile.Sync()
-	return nil
+	return err
 }
 
 func (context Context) BuildTemplates() error {

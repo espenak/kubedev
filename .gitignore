@@ -1,3 +1,4 @@
 .idea/
 /kubedev
 _kubedev_built_templates/
+.vscode/

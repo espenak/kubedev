@@ -9,7 +9,7 @@ import (
 func Build(args []string) {
 	verbose := false
 	cliFlags := flag.NewFlagSet("kubedev", flag.ExitOnError)
-	cliFlags.BoolVar(&verbose, "verbose", false, "Verbose mode")
+	cliFlags.BoolVar(&verbose, "v", false, "Verbose mode")
 	cliFlags.Usage = func() { printUsage(cliFlags) }
 
 	if len(args) < 1 {

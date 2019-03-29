@@ -8,7 +8,7 @@ spec:
   volumes:
   - name: shared-data
     hostPath:
-      path: /Users/espenak/code/kubewrr/shared_data
+      path: {{.Path "shared_files"}}
   terminationGracePeriodSeconds: 4
   containers:
   - name: {{.FullName}}-miniserver
