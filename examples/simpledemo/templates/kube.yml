@@ -1,9 +1,10 @@
 apiVersion: v1
 kind: Pod
 metadata:
-  name: {{.FullName}}-pod
+  name: {{.FullName}}
   labels:
-    app: {{.FullName}}
+    kubedev: {{.FullName}}
+    app: {{.FullName}}-miniserver
 spec:
   volumes:
   - name: shared-data
@@ -11,8 +12,8 @@ spec:
       path: {{.Path "shared_files"}}
   terminationGracePeriodSeconds: 4
   containers:
-  - name: {{.FullName}}-miniserver
-    image: {{.FullName}}-miniserver
+  - name: {{.FullName}}-miniserver-container
+    image: {{.FullName}}-miniserver-container
     imagePullPolicy: Never
     ports:
     - containerPort: 8000
@@ -23,9 +24,9 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{.FullName}}--miniserver-service
+  name: {{.FullName}}-miniserver-service
   labels:
-    app: {{.FullName}}
+    kubedev: {{.FullName}}
 spec:
   externalTrafficPolicy: Cluster
   ports:

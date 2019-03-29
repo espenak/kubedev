@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"log"
 	"os"
 )
 
@@ -26,13 +27,11 @@ func Build(args []string) {
 	// fmt.Printf("build! %t\n", verbose)
 	context, err := NewContext(contextRootDirectory, verbose)
 	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		os.Exit(1)
+		log.Fatal(err)
 	}
 
 	if context.BuildTemplates() != nil {
-		fmt.Fprintln(os.Stderr, err)
-		os.Exit(1)
+		log.Fatal(err)
 	}
 
 	if verbose {
