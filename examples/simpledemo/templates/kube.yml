@@ -13,7 +13,7 @@ spec:
   terminationGracePeriodSeconds: 4
   containers:
   - name: {{.FullName}}-miniserver-container
-    image: {{.FullName}}-miniserver-container
+    image: {{.FullName}}/miniserver
     imagePullPolicy: Never
     ports:
     - containerPort: 8000
