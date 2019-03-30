@@ -20,14 +20,7 @@ func main() {
 		fmt.Println(helpText)
 		os.Exit(1)
 	}
-	// fmt.Printf("Hello world!! %v %t\n", subcommand, verbose)
 }
-
-// func printUsage(cliFlags *flag.FlagSet) {
-// 	fmt.Fprintf(cliFlags.Output(), helpTextHeader)
-//   cliFlags.PrintDefaults()
-//   fmt.Fprintf(cliFlags.Output(), helpTextFooter)
-// }
 
 const helpText = `Usage: kubedev <subcommand>
 

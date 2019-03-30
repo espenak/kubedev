@@ -8,18 +8,19 @@ import (
 )
 
 func Build(args []string) {
-	verbose := false
+	var verbose bool
+	var contextRootDirectory string
 	cliFlags := flag.NewFlagSet("kubedev", flag.ExitOnError)
 	cliFlags.BoolVar(&verbose, "v", false, "Verbose mode")
-	cliFlags.Usage = func() { printUsage(cliFlags) }
+	cliFlags.StringVar(&contextRootDirectory, "d", "", "Kubedev context directory")
+	cliFlags.Usage = func() { printBuildUsage(cliFlags) }
 
 	if len(args) < 1 {
-		printUsage(cliFlags)
+		printBuildUsage(cliFlags)
 		os.Exit(1)
 	}
-	contextRootDirectory := args[0]
 
-	if err := cliFlags.Parse(args[1:]); err != nil {
+	if err := cliFlags.Parse(args); err != nil {
 		cliFlags.Usage()
 		os.Exit(1)
 	}
@@ -30,22 +31,19 @@ func Build(args []string) {
 		log.Fatal(err)
 	}
 
-	if context.BuildTemplates() != nil {
-		log.Fatal(err)
-	}
-
 	if verbose {
 		fmt.Println("** Config: **")
 		context.YamlPrint()
 		fmt.Println("")
 	}
 
-	// dockerDirectory := DockerDirectory{*context, "dockerimages/miniserver"}
-	// dockerDirectory.Build()
+	if context.BuildTemplates() != nil {
+		log.Fatal(err)
+	}
 	context.BuildAllDockerImages()
 }
 
-func printUsage(flagSet *flag.FlagSet) {
+func printBuildUsage(flagSet *flag.FlagSet) {
 	fmt.Fprintf(flagSet.Output(), buildHelpText)
 	flagSet.PrintDefaults()
 }
