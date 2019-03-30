@@ -39,6 +39,10 @@ func Build(args []string) {
 		context.YamlPrint()
 		fmt.Println("")
 	}
+
+	// dockerDirectory := DockerDirectory{*context, "dockerimages/miniserver"}
+	// dockerDirectory.Build()
+	context.BuildAllDockerImages()
 }
 
 func printUsage(flagSet *flag.FlagSet) {

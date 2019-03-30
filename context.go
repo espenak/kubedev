@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"io/ioutil"
+	"log"
 	"os"
 	"path/filepath"
 	"text/template"
@@ -181,4 +182,39 @@ func (context Context) YamlPrint() {
 	} else {
 		fmt.Fprintln(os.Stderr, err)
 	}
+}
+
+func (context Context) GetAllDockerDirectories() ([]DockerDirectory, error) {
+	var dockerDirectories []DockerDirectory
+	dockerImagesDirectory := filepath.Join(context.RootDirectory, "dockerimages")
+	fileInfo, readDirErr := ioutil.ReadDir(dockerImagesDirectory)
+	if readDirErr != nil {
+		return nil, readDirErr
+	}
+	for _, file := range fileInfo {
+		if file.IsDir() {
+			dockerImageDirectory := filepath.Join(dockerImagesDirectory, file.Name())
+			dockerDirectory, err := NewDockerDirectory(context, dockerImageDirectory)
+			if err == nil {
+				dockerDirectories = append(dockerDirectories, *dockerDirectory)
+			} else {
+				log.Printf("WARNING: %v", err)
+			}
+		}
+	}
+	return dockerDirectories, nil
+}
+
+func (context Context) BuildAllDockerImages() error {
+	dockerDirectories, err := context.GetAllDockerDirectories()
+	if err != nil {
+		return err
+	}
+	for _, dockerDirectory := range dockerDirectories {
+		err = dockerDirectory.Build()
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
