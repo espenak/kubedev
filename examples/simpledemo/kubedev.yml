@@ -17,3 +17,17 @@ paths:
 # Vars are parsed as strings and is made available to the templates
 vars:
   testVar: Hello World
+
+# Config is fetched from the "config" key in one of these files:
+# - kubedev.usersettings.yml (same directory as this file)
+# - ~/.kubedev.usersettings.yml
+#
+# If you have both, the values are first read from ~/.kubedev.usersettings.yml,
+# and then the values from the kubedev.usersettings.yml in this directory
+# is merged in, overriding values from ~/.kubedev.usersettings.yml.
+#
+# Values with the value "__KUBEDEV_REQUIRED__" MUST be defined in one of the 
+# usersettings files, and other values are optional, and can be overridden
+# by adding them to a usersettings file.
+# userConfig:
+#   GITHUB_ACCESS_TOKEN: __KUBEDEV_REQUIRED__

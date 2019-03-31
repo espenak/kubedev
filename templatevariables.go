@@ -19,3 +19,7 @@ func (templateVariables *TemplateVariables) Path(key string) string {
 func (templateVariables *TemplateVariables) Var(key string) string {
 	return templateVariables.context.Vars[key]
 }
+
+func (templateVariables *TemplateVariables) UserConfig(key string) string {
+	return templateVariables.context.UserConfig[key]
+}

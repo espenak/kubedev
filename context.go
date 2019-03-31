@@ -20,6 +20,8 @@ type Context struct {
 	Verbose       bool              `yaml:"verbose"`
 	Paths         map[string]string `yaml:"paths"`
 	Vars          map[string]string `yaml:"vars"`
+	UserConfig    map[string]string `yaml:"userConfig"`
+	userSettings  *UserSettings
 }
 
 func NewContext(rootDirectory string, verbose bool) (*Context, error) {
@@ -27,25 +29,75 @@ func NewContext(rootDirectory string, verbose bool) (*Context, error) {
 		return nil, err
 	}
 
-	absRootDirectory, err2 := filepath.Abs(rootDirectory)
-	if err2 != nil {
-		return nil, err2
+	absRootDirectory, err := filepath.Abs(rootDirectory)
+	if err != nil {
+		return nil, err
 	}
 
 	context := Context{}
-	err3 := context.loadConfigFile(absRootDirectory)
-	if err3 != nil {
-		return nil, err3
+	if err := context.loadConfigFile(absRootDirectory); err != nil {
+		return nil, err
 	}
 	context.RootDirectory = absRootDirectory
 	context.Verbose = verbose
 
-	validationError := context.clean()
-	if validationError != nil {
+	if validationError := context.clean(); validationError != nil {
 		return nil, validationError
 	}
 
+	if err := context.loadUserSettings(); err != nil {
+		return nil, err
+	}
+
+	if context.Verbose {
+		log.Printf("Current context:\n%v\n", string(context.ToYamlString()))
+	}
+
 	return &context, nil
+}
+
+func (context *Context) loadUserSettings() error {
+	context.userSettings = &UserSettings{}
+	if userDirectoryFilePath, err := context.userSettings.userDirectoryFilePath(); err != nil {
+		return err
+	} else {
+		if _, err := os.Stat(userDirectoryFilePath); os.IsNotExist(err) {
+			if context.Verbose {
+				log.Printf("%v does not exist. No global user settings file.", userDirectoryFilePath)
+			}
+		} else {
+			if err := context.userSettings.readFromUserDirectory(); err != nil {
+				return err
+			}
+		}
+	}
+
+	localSettingsFilePath := filepath.Join(context.RootDirectory, "kubedev.usersettings.yml")
+	if _, err := os.Stat(localSettingsFilePath); os.IsNotExist(err) {
+		log.Printf("%v does not exist. No context local user settings file.", localSettingsFilePath)
+	} else {
+		localUserSettings := UserSettings{}
+		if err := localUserSettings.readFromFile(localSettingsFilePath); err == nil {
+			context.userSettings.Update(localUserSettings)
+		}
+	}
+
+	if context.Verbose {
+		log.Printf("Merged user settings:\n%v\n", string(context.userSettings.ToYamlString()))
+	}
+
+	for configKey, configValue := range context.UserConfig {
+		configUserValue, keyExists := context.userSettings.Config[configKey]
+		if keyExists {
+			context.UserConfig[configKey] = configUserValue
+		}
+		if configValue == "__KUBEDEV_REQUIRED__" && configUserValue == "" {
+			return fmt.Errorf(
+				"The %#v user config is required. Please create a user settings file and add the config as explained in the kubedev docs.",
+				configKey)
+		}
+	}
+	return nil
 }
 
 func (context *Context) loadConfigFile(absRootDirectory string) error {
@@ -105,9 +157,9 @@ func (context *Context) clean() error {
 	if context.Vars == nil {
 		context.Vars = make(map[string]string)
 	}
-	// for k, v := range m {
-	//   fmt.Println("k:", k, "v:", v)
-	// }
+	if context.UserConfig == nil {
+		context.UserConfig = make(map[string]string)
+	}
 
 	return nil
 }
@@ -167,21 +219,17 @@ func (context Context) BuildTemplates() error {
 	return nil
 }
 
-func (context Context) YamlFormat() (string, error) {
-	output, err := yaml.Marshal(context)
-	if err != nil {
-		return "", err
+func (context Context) ToYaml() ([]byte, error) {
+	if output, err := yaml.Marshal(context); err != nil {
+		return nil, err
+	} else {
+		return output, nil
 	}
-	return string(output), nil
 }
 
-func (context Context) YamlPrint() {
-	output, err := context.YamlFormat()
-	if err == nil {
-		fmt.Println(output)
-	} else {
-		fmt.Fprintln(os.Stderr, err)
-	}
+func (context Context) ToYamlString() string {
+	yamlBytes, _ := context.ToYaml()
+	return string(yamlBytes)
 }
 
 func (context Context) GetAllDockerDirectories() ([]DockerDirectory, error) {
@@ -217,4 +265,9 @@ func (context Context) BuildAllDockerImages() error {
 		}
 	}
 	return nil
+}
+
+func (context Context) MakeKubeCtl() KubeCtl {
+	// TODO: Get kubectl path from config / user defaults
+	return KubeCtl{"kubectl"}
 }
