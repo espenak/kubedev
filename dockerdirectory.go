@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"strings"
 )
 
@@ -37,14 +38,31 @@ func (dockerDirectory DockerDirectory) ImageName() string {
 	return fmt.Sprintf("%s/%s", dockerDirectory.context.FullName(), dockerDirectory.Name())
 }
 
+func makeDockerBuildVariableName(prefix, suffix string) string {
+	re := regexp.MustCompile(`[^a-zA-Z_]`)
+	fullVariableName := prefix + "_" + suffix
+	return strings.ToUpper(re.ReplaceAllString(fullVariableName, "_"))
+}
+
 func (dockerDirectory DockerDirectory) BuildCommandArgs() []string {
-	return []string{"build", ".", "-f", dockerDirectory.FilePath(), "-t", dockerDirectory.ImageName()}
+	commandArgs := []string{"build", dockerDirectory.context.DockerContext, "-f", dockerDirectory.FilePath(), "-t", dockerDirectory.ImageName()}
+	for key, value := range dockerDirectory.context.Vars {
+		buildArg := fmt.Sprintf("%v=%v", makeDockerBuildVariableName("vars", key), value)
+		commandArgs = append(commandArgs, "--build-arg")
+		commandArgs = append(commandArgs, buildArg)
+	}
+	for key, value := range dockerDirectory.context.UserConfig {
+		buildArg := fmt.Sprintf("%v=%v", makeDockerBuildVariableName("userConfig", key), value)
+		commandArgs = append(commandArgs, "--build-arg")
+		commandArgs = append(commandArgs, buildArg)
+	}
+	return commandArgs
 }
 
 func (dockerDirectory DockerDirectory) Build() error {
 	buildCommandArgs := dockerDirectory.BuildCommandArgs()
 	log.Printf("Building docker image %v", dockerDirectory.ImageName())
-	log.Printf("... running: docker %v", strings.Join(buildCommandArgs, " "))
+	log.Printf("... running: \"docker\" executable with args %v", buildCommandArgs)
 	cmd := exec.Command("docker", buildCommandArgs...)
 	if dockerDirectory.context.Verbose {
 		cmd.Stdout = os.Stdout
