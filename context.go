@@ -26,7 +26,7 @@ type Context struct {
 
 func NewContext(rootDirectory string, verbose bool) (*Context, error) {
 	if _, err := os.Stat(rootDirectory); os.IsNotExist(err) {
-		return nil, err
+		return nil, fmt.Errorf("The provided kubedev context root directory, %#v, does not exist.", rootDirectory)
 	}
 
 	absRootDirectory, err := filepath.Abs(rootDirectory)
@@ -63,7 +63,7 @@ func (context *Context) loadUserSettings() error {
 	} else {
 		if _, err := os.Stat(userDirectoryFilePath); os.IsNotExist(err) {
 			if context.Verbose {
-				log.Printf("%v does not exist. No global user settings file.", userDirectoryFilePath)
+				log.Printf("%#v does not exist. No global user settings file.", userDirectoryFilePath)
 			}
 		} else {
 			if err := context.userSettings.readFromUserDirectory(); err != nil {
@@ -74,7 +74,9 @@ func (context *Context) loadUserSettings() error {
 
 	localSettingsFilePath := filepath.Join(context.RootDirectory, "kubedev.usersettings.yml")
 	if _, err := os.Stat(localSettingsFilePath); os.IsNotExist(err) {
-		log.Printf("%v does not exist. No context local user settings file.", localSettingsFilePath)
+		if context.Verbose {
+			log.Printf("%#v does not exist. No context local user settings file.", localSettingsFilePath)
+		}
 	} else {
 		localUserSettings := UserSettings{}
 		if err := localUserSettings.readFromFile(localSettingsFilePath); err == nil {
@@ -102,6 +104,9 @@ func (context *Context) loadUserSettings() error {
 
 func (context *Context) loadConfigFile(absRootDirectory string) error {
 	configFilePath := filepath.Join(absRootDirectory, "kubedev.yml")
+	if _, err := os.Stat(configFilePath); os.IsNotExist(err) {
+		return fmt.Errorf("Kubedev context directory config file, %#v, does not exist. Use the -d option to provide a directory with a kubedev.yml file.", configFilePath)
+	}
 	content, err := ioutil.ReadFile(configFilePath)
 	if err != nil {
 		return err

@@ -14,8 +14,8 @@ func main() {
 	switch subcommand {
 	case "build":
 		Build(os.Args[2:])
-	// case "send":
-	// sendCommand.Parse(os.Args[2:])
+	case "compile-templates":
+		CompileTemplates(os.Args[2:])
 	default:
 		fmt.Println(helpText)
 		os.Exit(1)
@@ -26,6 +26,8 @@ const helpText = `Usage: kubedev <subcommand>
 
 Subcommands:
 
-  build    Build stuff
-  up       Up stuff
+  build               Build the docker images.
+  compile-templates   Just compile the templates - do not build anything.
+  up                  Bring the development environment up. 
+    				  Shortcut for several of the other commands.
 `
